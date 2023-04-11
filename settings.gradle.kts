@@ -1,0 +1,1 @@
+rootProject.name = "org.sour.cabbage.soup.kafka.plugin"
