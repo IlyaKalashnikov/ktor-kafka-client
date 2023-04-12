@@ -9,16 +9,16 @@ class Kafka(
     private val config: Configuration
 ) {
     private val logger = LoggerFactory.getLogger(Kafka::class.java)
-    private var environment: ApplicationEnvironment? = config.environment
-    private var topics: List<NewTopic> = config.topics
+//    private var configuration: Map<String, Any>? = config.kafkaConfig
+//    private var topics: List<NewTopic> = config.topics
 
     class Configuration {
-        var environment: ApplicationEnvironment? = null
+        var kafkaConfig: Map<String, Any>? = null
         var topics: List<NewTopic> = listOf()
     }
 
     fun createTopics() {
-        val admin = buildKafkaAdmin(config.environment?.config!!) //TODO: accurate null-safety
+        val admin = buildKafkaAdmin(config.kafkaConfig!!) //TODO: accurate null-safety
         admin.createTopics(config.topics)
 
         config.topics.forEach {

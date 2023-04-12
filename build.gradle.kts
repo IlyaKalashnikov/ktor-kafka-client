@@ -20,6 +20,10 @@ repositories {
     mavenCentral()
 }
 
+tasks.named<Test>("test") {
+    useJUnitPlatform()
+}
+
 dependencies {
     // https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients
     implementation("org.apache.kafka:kafka-clients:3.4.0")
@@ -30,4 +34,12 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logback_version")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+
+    //JUnit
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-engine:5.9.2")
+
+    //TestContainers
+    testImplementation("org.testcontainers:testcontainers:1.18.0")
+    testImplementation("org.testcontainers:kafka:1.18.0")
 }
