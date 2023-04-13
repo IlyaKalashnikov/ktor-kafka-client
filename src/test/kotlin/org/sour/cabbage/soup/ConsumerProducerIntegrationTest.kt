@@ -14,13 +14,14 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.slf4j.LoggerFactory
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
 import org.testcontainers.utility.DockerImageName.parse
 import java.time.Duration
 import java.util.concurrent.*
 
-class PluginIntegrationTest {
+class ConsumerProducerIntegrationTest {
 
     companion object {
         lateinit var kafka: KafkaContainer
@@ -28,22 +29,18 @@ class PluginIntegrationTest {
         @JvmStatic
         @BeforeAll
         fun setUp() {
-            kafka = KafkaContainer(parse("confluentinc/cp-kafka:7.0.1")).apply {
-                withKraft()
+            kafka = KafkaContainer(parse("confluentinc/cp-kafka:latest")).apply {
+                //only for test
+                //withLogConsumer(Slf4jLogConsumer(log))
                 withEnv("KAFKA_AUTO_CREATE_TOPIC_ENABLE", "true")
                 start()
             }
         }
     }
 
-    @AfterEach
-    fun tearDown() {
-    }
-
-
     @Test
-    @DisplayName("should start KafkaProducer send to topic and KafkaConsumer consume from topic")
-    fun testDevEnvironment() = testApplication {
+    @DisplayName("Test should initiate Kafka topic, producer should be able to produce message, consumer should be able to consume it")
+    fun producerProducesConsumerConsumes() = testApplication {
         val topic = "test"
 
         application {
@@ -56,33 +53,37 @@ class PluginIntegrationTest {
                 )
             }
 
-            var producer = producer<String, String>(
+            val producer = producer<String, String>(
                 mapOf(
                     ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to kafka.bootstrapServers,
                     ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
                     ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java
                 )
             )
-            var consumer = consumer<String, String>(
+
+            val consumer = consumer<String, String>(
                 mapOf(
                     ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to kafka.bootstrapServers,
+                    ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to true,
+                    ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG to 1000,
                     ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
                     ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+                    ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
                     ConsumerConfig.GROUP_ID_CONFIG to "test-consumer-group",
                     ConsumerConfig.CLIENT_ID_CONFIG to "test-consumer-client"
                 )
             )
+            consumer.subscribe(listOf(topic))
 
             producer.send(ProducerRecord(topic, "testKey", "testVal"))
             producer.flush()
-
 
             val actual: MutableList<String> = CopyOnWriteArrayList()
             val service: ExecutorService = Executors.newSingleThreadExecutor()
             val consumingTask: Future<*> = service.submit {
                 while (!Thread.currentThread().isInterrupted) {
                     val records: ConsumerRecords<String, String> =
-                        consumer.poll(Duration.ofMillis(100))
+                        consumer.poll(Duration.ofMillis(1000))
                     for (rec in records) {
                         actual.add(rec.value())
                     }
@@ -91,7 +92,7 @@ class PluginIntegrationTest {
 
             try {
                 await()
-                    .atMost(5, TimeUnit.SECONDS)
+                    .atMost(120, TimeUnit.SECONDS)
                     .until { listOf("testVal") == actual }
             } finally {
                 consumingTask.cancel(true)

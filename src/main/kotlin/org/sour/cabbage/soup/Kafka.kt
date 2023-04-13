@@ -9,8 +9,6 @@ class Kafka(
     private val config: Configuration
 ) {
     private val logger = LoggerFactory.getLogger(Kafka::class.java)
-//    private var configuration: Map<String, Any>? = config.kafkaConfig
-//    private var topics: List<NewTopic> = config.topics
 
     class Configuration {
         var kafkaConfig: Map<String, Any>? = null
