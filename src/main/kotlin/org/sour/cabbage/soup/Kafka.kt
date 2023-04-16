@@ -16,7 +16,7 @@ class Kafka(
     }
 
     fun createTopics() {
-        val admin = buildKafkaAdmin(config.kafkaConfig!!) //TODO: accurate null-safety
+        val admin = buildKafkaAdmin(config.kafkaConfig!!)
         admin.createTopics(config.topics)
 
         config.topics.forEach {

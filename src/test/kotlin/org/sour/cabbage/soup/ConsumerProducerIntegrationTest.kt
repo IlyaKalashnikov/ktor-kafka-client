@@ -10,11 +10,9 @@ import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.slf4j.LoggerFactory
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
 import org.testcontainers.utility.DockerImageName.parse
@@ -30,8 +28,7 @@ class ConsumerProducerIntegrationTest {
         @BeforeAll
         fun setUp() {
             kafka = KafkaContainer(parse("confluentinc/cp-kafka:latest")).apply {
-                //only for test
-                //withLogConsumer(Slf4jLogConsumer(log))
+                withKraft()
                 withEnv("KAFKA_AUTO_CREATE_TOPIC_ENABLE", "true")
                 start()
             }
@@ -71,9 +68,9 @@ class ConsumerProducerIntegrationTest {
                     ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
                     ConsumerConfig.GROUP_ID_CONFIG to "test-consumer-group",
                     ConsumerConfig.CLIENT_ID_CONFIG to "test-consumer-client"
-                )
+                ),
+                listOf(topic)
             )
-            consumer.subscribe(listOf(topic))
 
             producer.send(ProducerRecord(topic, "testKey", "testVal"))
             producer.flush()
