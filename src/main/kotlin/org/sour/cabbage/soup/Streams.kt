@@ -2,21 +2,17 @@ package org.sour.cabbage.soup
 
 import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.StreamsBuilder
-import org.apache.kafka.streams.kstream.KStream
 import java.util.*
 
 
-class KafkaStreamsConfig<K, V>(
-    val topic: String,
-    val topologyBuilder: KStream<K, V>.() -> Unit,
+class KafkaStreamsConfig(
+    val topologyBuilder: StreamsBuilder.() -> Unit,
     val streamsConfig: Map<String, Any>,
     val builder: StreamsBuilder
 )
 
-fun <K, V> kafkaStreams(configuration: KafkaStreamsConfig<K, V>): KafkaStreams {
-    val stream = configuration.builder.stream<K, V>(configuration.topic)
-    stream.buildTopology(configuration.topologyBuilder)
-
+fun kafkaStreams(configuration: KafkaStreamsConfig): KafkaStreams {
+    configuration.builder.buildTopology(configuration.topologyBuilder)
     return KafkaStreams(configuration.builder.build(), buildConfigs(configuration.streamsConfig))
 }
 
@@ -26,7 +22,7 @@ private fun buildConfigs(streamsConfig: Map<String, Any>): Properties {
     return props
 }
 
-private fun <K, V> KStream<K, V>.buildTopology(builderBlock: KStream<K, V>.() -> Unit): KStream<K, V> {
+private fun StreamsBuilder.buildTopology(builderBlock: StreamsBuilder.() -> Unit) : StreamsBuilder {
     this.builderBlock()
     return this
 }

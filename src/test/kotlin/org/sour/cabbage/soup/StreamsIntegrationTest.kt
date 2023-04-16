@@ -12,7 +12,6 @@ import org.apache.kafka.streams.KafkaStreams
 import org.apache.kafka.streams.StoreQueryParameters
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.StreamsConfig
-import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.Materialized
 import org.apache.kafka.streams.state.QueryableStoreTypes
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore
@@ -69,9 +68,9 @@ class StreamsIntegrationTest {
 
             val streams = kafkaStreams(
                 KafkaStreamsConfig(
-                    topic = topic,
-                    topologyBuilder = fun KStream<String, String>.() {
-                        this.toTable(Materialized.`as`(table))
+                    topologyBuilder = fun StreamsBuilder.() {
+                        val stream = this.stream<String, String>(topic)
+                        stream.toTable(Materialized.`as`(table))
                     },
                     streamsConfig = mapOf(
                         StreamsConfig.BOOTSTRAP_SERVERS_CONFIG to kafka.bootstrapServers,
