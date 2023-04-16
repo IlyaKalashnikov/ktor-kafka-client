@@ -1,10 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-
-val ktor_version: String by project
-val kotlin_version: String by project
-val logback_version: String by project
-
 plugins {
     `java-library`
     id("io.ktor.plugin") version "2.2.4"
@@ -12,9 +7,12 @@ plugins {
     `maven-publish`
 }
 
+val ktor_version: String by project
+val kotlin_version: String by project
+val logback_version: String by project
+
 group = "org.sour.cabbage.soup"
 version = "0.0.1"
-
 
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
