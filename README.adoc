@@ -1,0 +1,121 @@
+= Kafka Client for Ktor
+
+There is no definitive Kafka Client for the Ktor framework at the moment.
+So here is my implementation:
+
+[source,kotlin]
+----
+install (Kafka) {
+    this.kafkaConfig = mapOf<String, Any>(
+                    ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to kafka.bootstrapServers
+    )
+    this.topics = listOf(
+                    NewTopic(topic, 1, 1)
+    )
+}
+----
+
+With this client, one should be able to use common Apache Kafka functionality but in a simple way.
+
+== Admin
+
+As I've demonstrated earlier, the Kafka Admin topic creation functionality is available via the installation of the Plugin.
+Thus, you only need to pass common configurations, such as `ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG`.
+For those, who need to manage and inspect topics, brokers, configurations, and ACLs, the creation of https://kafka.apache.org/24/javadoc/index.html?org/apache/kafka/clients/admin/Admin.html[Admin]
+is accessible through the _buildKafkaAdmin()_ function.
+The function accepts the only Map<String, Any>-type argument for Admin client configuration.
+
+[source,kotlin]
+----
+val admin = buildKafkaAdmin(
+                mapOf(
+                    ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to kafka.bootstrapServers
+                )
+            )
+----
+
+== Consumer
+
+The https://kafka.apache.org/26/javadoc/index.html?org/apache/kafka/clients/consumer/KafkaConsumer.html[KafkaConsumer] instance creation is handled by _consumer()_ function.
+It accepts Map<String, Any> for configurations and List<String> for topics, you want this consumer to subscribe on.
+
+[source,kotlin]
+----
+val consumer = consumer<String, String>(
+                mapOf(
+                    ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to kafka.bootstrapServers,
+                    ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+                    ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+                    ConsumerConfig.GROUP_ID_CONFIG to "amazing-consumer-group",
+                    ConsumerConfig.CLIENT_ID_CONFIG to "amazing-consumer-client"
+                ),
+                listOf("amazing-topic")
+            )
+----
+
+== Producer
+
+The https://kafka.apache.org/10/javadoc/index.html?org/apache/kafka/clients/producer/KafkaProducer.html[KafkaProducer] initialization is as simple and straightforward as consumer initialization:
+
+[source,kotlin]
+----
+val producer = producer<String, String>(
+                mapOf(
+                    ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to kafka.bootstrapServers,
+                    ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
+                    ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java
+                )
+            )
+----
+
+== Streams
+
+In the case of the https://kafka.apache.org/23/javadoc/org/apache/kafka/streams/KafkaStreams.html[KafkaStreams], I wanted to provide a simple way of configuring topology (If you are unfamiliar with Kafka Streams topology concepts, you can learn about it https://kafka.apache.org/34/documentation/streams/core-concepts[here]).
+Thus, for the process of initializing KafkaStreams to stay simple and to provide flexible topology configuration at the same time, I've decided to provide the ability to directly pass the topology builder block.
+The kafkaStreams() function of our plugin accepts the only KafkaStreamsConfig<K,V> object, here is its definition:
+
+[source,kotlin]
+----
+class KafkaStreamsConfig<K, V>(
+    val topic: String,
+    val topologyBuilder: KStream<K, V>.() -> Unit,
+    val streamsConfig: Map<String, Any>,
+    val builder: StreamsBuilder
+)
+----
+
+Here is the way of configuring the simplest topology:
+
+[source,kotlin]
+----
+val streams = kafkaStreams(
+                KafkaStreamsConfig(
+                    topic = topic,
+                    topologyBuilder = fun KStream<String, String>.() {
+                        this.toTable(Materialized.`as`(table))
+                    },
+                    streamsConfig = mapOf(
+                        StreamsConfig.BOOTSTRAP_SERVERS_CONFIG to kafka.bootstrapServers,
+                        StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG to Serdes.String().javaClass,
+                        StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG to Serdes.String().javaClass,
+                        StreamsConfig.APPLICATION_ID_CONFIG to "test-app",
+                        StreamsConfig.CLIENT_ID_CONFIG to "test-client",
+                        StreamsConfig.COMMIT_INTERVAL_MS_CONFIG to 1000,
+                    ),
+                    builder = StreamsBuilder()
+                )
+            )
+----
+
+As you see we've declared the extension function and instructed our plugin on how to configure the topology for this KafkaStreams instance.
+
+== Usage
+
+Example project is on its way.
+For now, feel free to try this plugin in your projects.
+I welcome comments, suggestions, corrections, and (thoughtful, constructive) criticism!
+
+== References
+
+I've used this great https://github.com/gAmUssA/ktor-kafka[project] as a reference, implemented some new features, and restructured existing ones to be more simple and more straightforward.
+Please take a look at gAmUssA's project, maybe you will find it more suitable for your needs.
