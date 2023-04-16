@@ -3,8 +3,10 @@ val kotlin_version: String by project
 val logback_version: String by project
 
 plugins {
+    `java-library`
     kotlin("jvm") version "1.8.20"
     id("io.ktor.plugin") version "2.2.4"
+    `maven-publish`
 }
 
 group = "org.sour.cabbage.soup"
@@ -42,4 +44,15 @@ dependencies {
     //TestContainers
     testImplementation("org.testcontainers:testcontainers:1.18.0")
     testImplementation("org.testcontainers:kafka:1.18.0")
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = project.group.toString()
+            artifactId = project.name
+            version = project.version.toString()
+            from(components["java"])
+        }
+    }
 }
