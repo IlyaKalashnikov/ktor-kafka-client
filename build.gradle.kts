@@ -1,21 +1,23 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+
 val ktor_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
 
 plugins {
     `java-library`
-    kotlin("jvm") version "1.8.20"
     id("io.ktor.plugin") version "2.2.4"
+    kotlin("jvm") version "1.8.20"
     `maven-publish`
 }
 
 group = "org.sour.cabbage.soup"
 version = "0.0.1"
+
+
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
-
-    val isDevelopment: Boolean = project.ext.has("development")
-    applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
 repositories {
@@ -44,6 +46,10 @@ dependencies {
     //TestContainers
     testImplementation("org.testcontainers:testcontainers:1.18.0")
     testImplementation("org.testcontainers:kafka:1.18.0")
+}
+
+tasks.withType<KotlinCompile> {
+    kotlinOptions.jvmTarget = "17"
 }
 
 publishing {
