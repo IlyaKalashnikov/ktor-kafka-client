@@ -17,6 +17,25 @@ install (Kafka) {
 
 With this client, one should be able to use common Apache Kafka functionality but in a simple way.
 
+== Usage
+
+To use this client in your projects, please add the jitpack repository and relevant dependency to your build file.
+[source,kotlin]
+----
+repositories {
+    maven {
+        url = uri("https://jitpack.io")
+    }
+}
+
+dependencies {
+    implementation("com.github.IlyaKalashnikov:ktor-kafka-client:-SNAPSHOT")
+}
+----
+
+Check out https://github.com/IlyaKalashnikov/ktor-kafka-client-example[example project] to see the way of implementing the client in your project.
+I welcome comments, suggestions, corrections, and (thoughtful, constructive) criticism!
+
 == Admin
 
 As I've demonstrated earlier, the Kafka Admin topic creation functionality is available via the installation of the Plugin.
@@ -76,9 +95,9 @@ The kafkaStreams() function of our plugin accepts the only KafkaStreamsConfig<K,
 
 [source,kotlin]
 ----
-class KafkaStreamsConfig<K, V>(
+class KafkaStreamsConfig (
     val topic: String,
-    val topologyBuilder: KStream<K, V>.() -> Unit,
+    val topologyBuilder: StreamsBuilder.() -> Unit,
     val streamsConfig: Map<String, Any>,
     val builder: StreamsBuilder
 )
@@ -88,11 +107,12 @@ Here is the way of configuring the simplest topology:
 
 [source,kotlin]
 ----
-val streams = kafkaStreams(
+val streams = kafkaStreams (
                 KafkaStreamsConfig(
                     topic = topic,
-                    topologyBuilder = fun KStream<String, String>.() {
-                        this.toTable(Materialized.`as`(table))
+                    topologyBuilder = fun StreamsBuilder.() {
+                        val stream = this.stream(TOPIC, Consumed.with(Serdes.String(), Serdes.String()))
+                        stream.toTable(Materialized.`as`(table))
                     },
                     streamsConfig = mapOf(
                         StreamsConfig.BOOTSTRAP_SERVERS_CONFIG to kafka.bootstrapServers,
@@ -107,13 +127,8 @@ val streams = kafkaStreams(
             )
 ----
 
-As you see we've declared the extension function and instructed our plugin on how to configure the topology for this KafkaStreams instance.
-
-== Usage
-
-Example project is on its way.
-For now, feel free to try this plugin in your projects.
-I welcome comments, suggestions, corrections, and (thoughtful, constructive) criticism!
+As you see we've declared the extension function and instructed our plugin on how to configure the topology for this KafkaStreams instance. This way you can pass even the most sophisticated topologies.
+Please find the example of multi-layered topology in the https://github.com/IlyaKalashnikov/ktor-kafka-client-example[example project].
 
 == References
 
